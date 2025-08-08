@@ -22,8 +22,14 @@ from speaches.api_types import (
     TimestampGranularities,
     TranscriptionSegment,
 )
-from speaches.dependencies import AudioFileDependency, ConfigDependency, WhisperModelManagerDependency
+from speaches.dependencies import (
+    AudioFileDependency,
+    ConfigDependency,
+    WhisperModelManagerDependency,
+    MlxWhisperModelManagerDependency,
+)
 from speaches.executors.whisper import utils as whisper_utils
+from speaches.executors.mlx_whisper import utils as mlx_utils
 from speaches.hf_utils import (
     MODEL_CARD_DOESNT_EXISTS_ERROR_MESSAGE,
     get_model_card_data_from_cached_repo_info,
@@ -117,6 +123,7 @@ def translate_file(
     # Use config default if vad_filter not explicitly provided
     effective_vad_filter = vad_filter if vad_filter is not None else config._unstable_vad_filter  # noqa: SLF001
 
+    # For translations we only currently support faster-whisper; MLX path could be added later
     with model_manager.load_model(model) as whisper:
         whisper_model = BatchedInferencePipeline(model=whisper) if config.whisper.use_batched_mode else whisper
         segments, transcription_info = whisper_model.transcribe(
@@ -207,6 +214,25 @@ def transcribe_file(
                 hotwords=hotwords,
             )
             segments = TranscriptionSegment.from_faster_whisper_segments(segments)
+
+            if stream:
+                return segments_to_streaming_response(segments, transcription_info, response_format)
+            else:
+                return segments_to_response(segments, transcription_info, response_format)
+    elif mlx_utils.hf_model_filter.passes_filter(model_card_data):
+        # MLX Whisper backend
+        from speaches.dependencies import get_mlx_model_manager
+
+        mlx_model_manager = get_mlx_model_manager()
+        with mlx_model_manager.load_model(model) as mlx_runtime:
+            segments, transcription_info = mlx_runtime.transcribe(
+                audio,
+                task="transcribe",
+                language=language,
+                initial_prompt=prompt,
+                word_timestamps="word" in timestamp_granularities,
+                temperature=temperature,
+            )
 
             if stream:
                 return segments_to_streaming_response(segments, transcription_info, response_format)

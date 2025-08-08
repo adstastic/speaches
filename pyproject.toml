@@ -9,7 +9,7 @@ dependencies = [
     "faster-whisper>=1.1.1",
     "huggingface-hub[hf-transfer]>=0.33.4",
     "kokoro-onnx[gpu]>=0.4.5,<0.5.0",
-    "numpy>=2.3.1",
+    "numpy>=2.1.0,<2.3",
     "piper-phonemize ; sys_platform == 'linux'",
     "piper-tts>=1.2.0 ; sys_platform == 'linux'",
     "pydantic-settings>=2.10.1",
@@ -49,6 +49,10 @@ dev = [
 ui = [
     "gradio>=5.13.0",
     "httpx-sse>=0.4.1",
+]
+mlx = [
+    "mlx>=0.21.0",
+    "mlx-whisper>=0.1.0",
 ]
 opentelemetry = [
     "opentelemetry-distro>=0.50b0",

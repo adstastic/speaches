@@ -23,6 +23,7 @@ from speaches.config import Config
 from speaches.executors.kokoro.model_manager import KokoroModelManager
 from speaches.executors.piper.model_manager import PiperModelManager
 from speaches.executors.whisper.model_manager import WhisperModelManager
+from speaches.executors.mlx_whisper.model_manager import MlxWhisperModelManager
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,15 @@ def get_model_manager() -> WhisperModelManager:
 
 
 WhisperModelManagerDependency = Annotated[WhisperModelManager, Depends(get_model_manager)]
+
+
+@lru_cache
+def get_mlx_model_manager() -> MlxWhisperModelManager:
+    config = get_config()
+    return MlxWhisperModelManager(config.whisper.ttl)
+
+
+MlxWhisperModelManagerDependency = Annotated[MlxWhisperModelManager, Depends(get_mlx_model_manager)]
 
 
 @lru_cache
